@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Board, ScribeChange } from '#lib/board/board.ts';
 import { createLiveConversation } from '#lib/conversation/live.ts';
+import { createRecordingConversation } from '#lib/conversation/recording.ts';
 import type { Scribe } from '#lib/scribe/scribe.ts';
 import type { Speech, Transcriber } from '#lib/transcriber/transcriber.ts';
 import { startRun, type RunUpdate } from './run';
@@ -169,5 +170,43 @@ describe('a Run over a live conversation', () => {
 		run.subscribe((update) => late.push(update)); // a late subscriber gets everything so far
 		expect(late.map((update) => update.type)).toEqual(['problem', 'speech', 'board', 'ended']);
 		expect(late[0]).toMatchObject({ message: expect.stringContaining('at 0s') });
+	});
+});
+
+describe('a Run over a Recording', () => {
+	it('hears the stored speech one line at a time, without transcribing or keeping it again', async () => {
+		const heard: Speech[][] = [];
+		const slowScribe: Scribe = {
+			async hear(context) {
+				await new Promise((resolve) => setTimeout(resolve, 5));
+				return echoScribe(heard).hear(context);
+			}
+		};
+		const folders = fakeFolders();
+		const transcriber: Transcriber = {
+			transcribe: () => Promise.reject(new Error('a Recording replay should not transcribe'))
+		};
+		const run = startRun({
+			source: createRecordingConversation([
+				{ at: 0, text: 'One' },
+				{ at: 5, text: 'Two' },
+				{ at: 10, text: 'Three' }
+			]),
+			transcriber,
+			scribe: slowScribe,
+			...folders
+		});
+		const updates: RunUpdate[] = [];
+		run.subscribe((update) => updates.push(update));
+		const final = await run.done;
+
+		expect(heard.map((speech) => speech.map((line) => line.text))).toEqual([
+			['One'],
+			['Two'],
+			['Three']
+		]);
+		expect(folders.kept.speech).toEqual([]);
+		expect(updates.filter((update) => update.type === 'speech')).toHaveLength(3);
+		expect(final.stickies.map((sticky) => sticky.text)).toEqual(['One', 'Two', 'Three']);
 	});
 });

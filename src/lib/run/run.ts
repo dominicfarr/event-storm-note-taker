@@ -28,13 +28,18 @@ export interface Run {
  * asks for goes into the Run's change log, and the Board file is rewritten
  * after each call. A chunk that fails to transcribe, or a Scribe call that
  * fails, is reported and skipped, so the Run carries on.
+ *
+ * Speech replayed from a Recording is already in the transcript, so it is
+ * neither transcribed nor kept again. It is heard one line at a time, each
+ * once the Scribe has finished the last, so re-running a Recording gives the
+ * Scribe the same calls every time, however fast the Model is.
  */
 export function startRun(deps: {
 	source: ConversationSource;
 	transcriber: Transcriber;
 	scribe: Scribe;
 	folder: Pick<SessionFolder, 'keepSpeech'>;
-	runFolder: RunFolder;
+	runFolder: Pick<RunFolder, 'keepBoard' | 'keepChange'>;
 }): Run {
 	let updates: RunUpdate[] = [];
 	const listeners = new Set<(update: RunUpdate) => void>();
@@ -77,6 +82,14 @@ export function startRun(deps: {
 	const done = (async () => {
 		for await (const event of deps.source.events()) {
 			if (event.type === 'end') break;
+			if (event.type === 'speech') {
+				const speech = { at: event.at, text: event.text };
+				send({ type: 'speech', speech });
+				waiting.push(speech);
+				scribeWhenFree();
+				while (scribing) await scribing;
+				continue;
+			}
 			try {
 				for (const speech of await deps.transcriber.transcribe(event)) {
 					await deps.folder.keepSpeech(speech);
