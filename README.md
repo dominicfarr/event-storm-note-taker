@@ -28,6 +28,14 @@ curl -L -o ~/models/whisper/ggml-small.en.bin \
 cp .env.example .env   # then adjust the paths if yours differ
 ```
 
+It writes the Stickies with `qwen3:8b` (about 5 GB), served by [Ollama](https://ollama.com) on its default port:
+
+```sh
+brew install ollama
+brew services start ollama
+ollama pull qwen3:8b
+```
+
 Run the app on localhost with `npm run dev`. It starts `whisper-server` too, with the model in `WHISPER_MODEL`, and stops it on exit. Sessions are kept in `EVENTSTORM_HOME` (`~/EventStorm` by default). Use Chrome: the page asks the browser for 16 kHz microphone audio, which Firefox may refuse. `npm test`, `npm run check`, `npm run lint` and `npm run build` run the same checks as CI.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and the commit message format, and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the development practices.
