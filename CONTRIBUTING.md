@@ -5,7 +5,9 @@ These rules apply to humans and agents alike. Use the terms in [GLOSSARY.md](GLO
 
 ## Workflow
 
-- **Trunk-based.** Commit small, working changes directly to `main`. No long-lived branches; other branches are only for throwaway experiments.
+- **Short branches, reviewed by Dom** ([ADR 0001](docs/adr/0001-review-every-change-in-a-pr.md)). One issue gets one branch, named `<type>/<short-slug>` after its commit type (`docs/plan`, `feat/chaotic-exploration-view`), and one PR. The agent opens the PR with `gh` and stops. Dom reviews the diff and comments, the agent pushes fixes to the same branch, and Dom's merge is the approval. Branches live for hours, not days; only `main` lasts.
+- **Small batches.** If a PR needs more than about 400 changed lines of hand-written code, the issue is too big: split it.
+- **Rebase merge only.** Every commit on `main` is one that passed the hooks; GitHub-made squash or merge commits would not have. Branches are deleted on merge.
 - **One-time setup:** follow [Development setup](README.md#development-setup) in the README. `pre-commit install` installs both the `pre-commit` and `commit-msg` hooks. Keep shellcheck on your PATH: actionlint only checks workflow shell scripts when it is there, and CI always has it. The hook tools are pinned in `.pre-commit-config.yaml`, and pre-commit downloads them on first use.
 - **Every commit must pass the hooks.** If a hook fails or changes files, fix the problem, `git add -u`, and commit again. Never use `--no-verify`. CI runs the same checks and will fail anyway.
 - **Only the pipeline deploys.** Don't deploy from a laptop.
