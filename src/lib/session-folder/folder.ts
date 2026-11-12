@@ -1,5 +1,6 @@
 import { access, appendFile, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { Board } from '#lib/board/board.ts';
 import type { Speech } from '#lib/transcriber/transcriber.ts';
 import { sessionFolderName } from './folder-name';
 
@@ -11,6 +12,16 @@ export interface SessionFolder {
 	keepAudio(chunk: { seq: number; wav: Uint8Array }): Promise<void>;
 	/** Adds one Speech to the end of the transcript. */
 	keepSpeech(speech: Speech): Promise<void>;
+	/** Creates the folder for one Run, under `runs/`. */
+	createRunFolder(name: string): Promise<RunFolder>;
+}
+
+/** One Run's folder: its Board and every change asked for, applied or not. */
+export interface RunFolder {
+	/** Replaces `board.json` with this Board, one field per line. */
+	keepBoard(board: Board): Promise<void>;
+	/** Adds one entry to the end of `changes.jsonl`. */
+	keepChange(entry: object): Promise<void>;
 }
 
 /**
@@ -36,7 +47,17 @@ export async function createSessionFolder(
 		keepAudio: ({ seq, wav }) =>
 			writeFile(path.join(dir, 'recording', `${String(seq).padStart(4, '0')}.wav`), wav),
 		keepSpeech: (speech) =>
-			appendFile(path.join(dir, 'transcript.jsonl'), JSON.stringify(speech) + '\n')
+			appendFile(path.join(dir, 'transcript.jsonl'), JSON.stringify(speech) + '\n'),
+		createRunFolder: async (name) => {
+			const runDir = path.join(dir, 'runs', name);
+			await mkdir(runDir, { recursive: true });
+			return {
+				keepBoard: (board) =>
+					writeFile(path.join(runDir, 'board.json'), JSON.stringify(board, null, '\t') + '\n'),
+				keepChange: (entry) =>
+					appendFile(path.join(runDir, 'changes.jsonl'), JSON.stringify(entry) + '\n')
+			};
+		}
 	};
 }
 
