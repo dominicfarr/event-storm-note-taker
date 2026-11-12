@@ -54,3 +54,24 @@ describe('createSessionFolder', () => {
 		]);
 	});
 });
+
+describe('a Run folder', () => {
+	it('keeps the latest Board and every change, under runs/', async () => {
+		const folder = await createSessionFolder(root, 'Soup', startedAt);
+		const run = await folder.createRunFolder('2026-11-12T09-30-ollama-qwen3-8b');
+		await run.keepBoard({ stickies: [] });
+		await run.keepChange({ change: 'add-mention', id: 's1', applied: false });
+		await run.keepChange({ change: 'add-mention', id: 's2', applied: true });
+		const board = {
+			stickies: [
+				{ id: 's1', kind: 'domain-event' as const, text: 'Kettle Boiled', mentions: 0, saidAt: 0 }
+			]
+		};
+		await run.keepBoard(board);
+
+		const dir = path.join(folder.dir, 'runs', '2026-11-12T09-30-ollama-qwen3-8b');
+		expect(JSON.parse(await readFile(path.join(dir, 'board.json'), 'utf8'))).toEqual(board);
+		const changes = (await readFile(path.join(dir, 'changes.jsonl'), 'utf8')).trim().split('\n');
+		expect(changes.map((line) => JSON.parse(line).id)).toEqual(['s1', 's2']);
+	});
+});
