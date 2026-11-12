@@ -45,18 +45,18 @@ A headless CLI starts the same Run from a Recording with no browser, which is ho
 
 ## Modules
 
-| Module | Deep because | Seam? |
-|---|---|---|
-| **Board** | All the domain rules (ownership, Mentions, merges, removal, timeline order, Pivotal marks, Hot Spot attachment) behind one `apply` | No: pure, tested directly |
-| **Scribe** | Prompting, per-Phase change vocabulary, schema, validation and repair behind one `hear` | No, but it has the Model seam inside |
-| **Model** | — | **Yes**: Ollama and Claude adapters (two adapters, a real seam) |
-| **Transcriber** | — | **Yes**: whisper-server adapter, plus a fixture adapter in tests |
-| **Conversation source** | Turns live input or a Recording into one ordered event stream | **Yes**: live and Recording adapters (two adapters) |
-| **Run** | Wires the rest together: transcribing, batching speech for the Scribe, applying changes, saving, broadcasting | No: tested with fakes at the seams |
-| **Views** | Where every Sticky goes in each Phase view | No: pure layout functions |
-| **Board view** | — | **Yes**, by Dom's choice: Svelte Flow is the only adapter for now, kept thin so it can be replaced |
-| **Session folder** | Reading and writing `~/EventStorm/<session>/` | No: one adapter, tested against a temp folder |
-| **Scoring** | Comparing a Run's Board with the Expected List | No: pure, with a pluggable matcher |
+| Module                  | Deep because                                                                                                                       | Seam?                                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Board**               | All the domain rules (ownership, Mentions, merges, removal, timeline order, Pivotal marks, Hot Spot attachment) behind one `apply` | No: pure, tested directly                                                                          |
+| **Scribe**              | Prompting, per-Phase change vocabulary, schema, validation and repair behind one `hear`                                            | No, but it has the Model seam inside                                                               |
+| **Model**               | —                                                                                                                                  | **Yes**: Ollama and Claude adapters (two adapters, a real seam)                                    |
+| **Transcriber**         | —                                                                                                                                  | **Yes**: whisper-server adapter, plus a fixture adapter in tests                                   |
+| **Conversation source** | Turns live input or a Recording into one ordered event stream                                                                      | **Yes**: live and Recording adapters (two adapters)                                                |
+| **Run**                 | Wires the rest together: transcribing, batching speech for the Scribe, applying changes, saving, broadcasting                      | No: tested with fakes at the seams                                                                 |
+| **Views**               | Where every Sticky goes in each Phase view                                                                                         | No: pure layout functions                                                                          |
+| **Board view**          | —                                                                                                                                  | **Yes**, by Dom's choice: Svelte Flow is the only adapter for now, kept thin so it can be replaced |
+| **Session folder**      | Reading and writing `~/EventStorm/<session>/`                                                                                      | No: one adapter, tested against a temp folder                                                      |
+| **Scoring**             | Comparing a Run's Board with the Expected List                                                                                     | No: pure, with a pluggable matcher                                                                 |
 
 ### Board
 
@@ -66,22 +66,22 @@ A pure module: no I/O, no time, no randomness passed in from outside.
 type StickyKind = 'domain-event' | 'hot-spot';
 
 interface Sticky {
-  id: string;            // short and stable, e.g. "s7", so the Scribe can refer to it
-  kind: StickyKind;
-  text: string;
-  pivotal: boolean;      // only meaningful for a Domain Event
-  concerns?: string;     // a Hot Spot's Sticky
-  mentions: number;
-  saidAt: number;        // seconds into the Session
-  owner: 'scribe' | 'human';
-  removed: boolean;      // kept, so the Scribe can't bring it back
+	id: string; // short and stable, e.g. "s7", so the Scribe can refer to it
+	kind: StickyKind;
+	text: string;
+	pivotal: boolean; // only meaningful for a Domain Event
+	concerns?: string; // a Hot Spot's Sticky
+	mentions: number;
+	saidAt: number; // seconds into the Session
+	owner: 'scribe' | 'human';
+	removed: boolean; // kept, so the Scribe can't bring it back
 }
 
 interface Board {
-  scope: string;
-  goal: string;
-  stickies: Sticky[];
-  timeline: string[];    // Domain Event ids in domain order
+	scope: string;
+	goal: string;
+	stickies: Sticky[];
+	timeline: string[]; // Domain Event ids in domain order
 }
 
 function apply(board: Board, change: BoardChange): { board: Board; applied: boolean };
@@ -100,20 +100,25 @@ Pivotal Event is a mark on a Domain Event, not its own kind, so that marking and
 
 ```ts
 interface Model {
-  complete<T>(request: { system: string; prompt: string; schema: JSONSchema }): Promise<T>;
+	complete<T>(request: { system: string; prompt: string; schema: JSONSchema }): Promise<T>;
 }
 
 function createScribe(model: Model): {
-  hear(context: { phase: Phase; scope: string; board: Board; speech: Speech[] }): Promise<ScribeChange[]>;
+	hear(context: {
+		phase: Phase;
+		scope: string;
+		board: Board;
+		speech: Speech[];
+	}): Promise<ScribeChange[]>;
 };
 ```
 
 The Scribe builds the prompt (the Scope, the current Board with Sticky ids, and the new speech), asks the Model for changes using the **schema for the current Phase**, and drops any change that fails validation instead of failing the Run. Each Phase allows a different set of changes, which keeps the schema small for an 8B model and keeps the Scribe true to the method:
 
-| Phase | Changes the Scribe may make |
-|---|---|
-| Kick Off | set Scope, set Goal |
-| Chaotic Exploration | add Domain Event or Hot Spot, add Mention, rename, remove |
+| Phase                | Changes the Scribe may make                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| Kick Off             | set Scope, set Goal                                                                       |
+| Chaotic Exploration  | add Domain Event or Hot Spot, add Mention, rename, remove                                 |
 | Enforce the Timeline | all of the above, plus merge, set timeline order, mark or unmark Pivotal, attach Hot Spot |
 
 Model adapters:
@@ -125,7 +130,7 @@ Model adapters:
 
 ```ts
 interface Transcriber {
-  transcribe(audio: { wav: Uint8Array; at: number }): Promise<Speech[]>;   // Speech = { at: number; text: string }
+	transcribe(audio: { wav: Uint8Array; at: number }): Promise<Speech[]>; // Speech = { at: number; text: string }
 }
 ```
 
@@ -135,13 +140,13 @@ The **whisper-server** adapter posts each chunk to `whisper-server` on localhost
 
 ```ts
 type ConversationEvent =
-  | { type: 'audio'; at: number; wav: Uint8Array }
-  | { type: 'speech'; at: number; text: string }
-  | { type: 'phase'; at: number; phase: Phase }
-  | { type: 'end'; at: number };
+	| { type: 'audio'; at: number; wav: Uint8Array }
+	| { type: 'speech'; at: number; text: string }
+	| { type: 'phase'; at: number; phase: Phase }
+	| { type: 'end'; at: number };
 
 interface ConversationSource {
-  events(): AsyncIterable<ConversationEvent>;
+	events(): AsyncIterable<ConversationEvent>;
 }
 ```
 
@@ -152,15 +157,15 @@ interface ConversationSource {
 
 ```ts
 function startRun(deps: {
-  source: ConversationSource;
-  transcriber: Transcriber;
-  scribe: Scribe;
-  folder: SessionFolder;
+	source: ConversationSource;
+	transcriber: Transcriber;
+	scribe: Scribe;
+	folder: SessionFolder;
 }): {
-  board(): Board;
-  subscribe(listener: (update: BoardUpdate) => void): () => void;
-  edit(edit: HumanEdit): void;
-  done: Promise<Board>;
+	board(): Board;
+	subscribe(listener: (update: BoardUpdate) => void): () => void;
+	edit(edit: HumanEdit): void;
+	done: Promise<Board>;
 };
 ```
 
@@ -173,7 +178,7 @@ Latency budget for a Sticky: 5 s chunk + about 1–2 s whisper + about 3–8 s M
 ```ts
 type View = 'kick-off' | 'chaotic-exploration' | 'enforce-the-timeline';
 
-function layout(board: Board, view: View): Placed[];   // Placed = { sticky | panel, x, y, width, height }
+function layout(board: Board, view: View): Placed[]; // Placed = { sticky | panel, x, y, width, height }
 ```
 
 Layout is pure and lives with us, not Svelte Flow: the Chaotic Exploration view is a grid in spoken order, the Enforce the Timeline view runs left to right in `timeline` order with Pivotal Events as dividers and Hot Spots beside the Sticky they concern, and the Kick Off view is the two panels.
@@ -201,8 +206,15 @@ The root defaults to `~/EventStorm` and is set with `EVENTSTORM_HOME`.
 ### Scoring
 
 ```ts
-function score(board: Board, expected: string[], match: Matcher): {
-  caught: string[]; missed: string[]; junk: string[]; orderAgreement: number;
+function score(
+	board: Board,
+	expected: string[],
+	match: Matcher
+): {
+	caught: string[];
+	missed: string[];
+	junk: string[];
+	orderAgreement: number;
 };
 ```
 
@@ -236,17 +248,17 @@ src/
 
 Each slice is one issue, one branch and one PR (ADR 0001), and each ends with something Dom can try. They run in order; the CLI and scoring come early so every later slice can be measured.
 
-| # | Slice | Try it |
-|---|---|---|
-| 0 | **Add the JS/TS (Svelte) stack** (#4) | `npm test` and CI green |
-| 1 | **Talk and see the transcript:** start a Session, microphone to WAV chunks, Live conversation, whisper-server Transcriber, transcript streamed to the page, Recording and transcript kept in the Session folder | Talk; your words appear; the folder holds the Recording |
-| 2 | **Domain Events appear:** Board (add, Mention), Scribe with the Ollama Model for Chaotic Exploration, Run, Chaotic Exploration view, Board view with Svelte Flow | Talk through ordering a takeaway; Domain Events appear within about 15 s |
-| 3 | **Re-run and score:** Recording conversation (transcript, fast), `npm run scribe` and `npm run score`, Expected List | Write `expected.txt`, re-run, get caught / missed / junk |
-| 4 | **Kick Off and Phases:** Phase control, Phase marks in the Recording and replayed in Runs, Scope and Goal changes, Kick Off view, switching views at any time | Set the Scope aloud; it shows in the Kick Off panel; Phase switches survive a re-run |
-| 5 | **Hot Spots and the Scribe changing its mind:** Hot Spot kind, rename and remove by the Scribe | Raise a question and later reverse a statement; the Board follows |
-| 6 | **Human edits:** edit text or kind, delete, drag, add; ownership | Edit a Sticky, keep talking about it; the Scribe leaves it alone |
-| 7 | **Enforce the Timeline:** merge, timeline order, Pivotal marks, Hot Spot attachment, the timeline view | Narrate the order; the timeline forms with Pivotal dividers; `orderAgreement` in the score |
-| 8 | **Claude comparison Runs:** Claude Model adapter, `--model claude:…` | Score the same Recording with both Models |
-| 9 | **Print:** export the current view as PNG and PDF | Export a timeline and open it |
+| #   | Slice                                                                                                                                                                                                           | Try it                                                                                     |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 0   | **Add the JS/TS (Svelte) stack** (#4)                                                                                                                                                                           | `npm test` and CI green                                                                    |
+| 1   | **Talk and see the transcript:** start a Session, microphone to WAV chunks, Live conversation, whisper-server Transcriber, transcript streamed to the page, Recording and transcript kept in the Session folder | Talk; your words appear; the folder holds the Recording                                    |
+| 2   | **Domain Events appear:** Board (add, Mention), Scribe with the Ollama Model for Chaotic Exploration, Run, Chaotic Exploration view, Board view with Svelte Flow                                                | Talk through ordering a takeaway; Domain Events appear within about 15 s                   |
+| 3   | **Re-run and score:** Recording conversation (transcript, fast), `npm run scribe` and `npm run score`, Expected List                                                                                            | Write `expected.txt`, re-run, get caught / missed / junk                                   |
+| 4   | **Kick Off and Phases:** Phase control, Phase marks in the Recording and replayed in Runs, Scope and Goal changes, Kick Off view, switching views at any time                                                   | Set the Scope aloud; it shows in the Kick Off panel; Phase switches survive a re-run       |
+| 5   | **Hot Spots and the Scribe changing its mind:** Hot Spot kind, rename and remove by the Scribe                                                                                                                  | Raise a question and later reverse a statement; the Board follows                          |
+| 6   | **Human edits:** edit text or kind, delete, drag, add; ownership                                                                                                                                                | Edit a Sticky, keep talking about it; the Scribe leaves it alone                           |
+| 7   | **Enforce the Timeline:** merge, timeline order, Pivotal marks, Hot Spot attachment, the timeline view                                                                                                          | Narrate the order; the timeline forms with Pivotal dividers; `orderAgreement` in the score |
+| 8   | **Claude comparison Runs:** Claude Model adapter, `--model claude:…`                                                                                                                                            | Score the same Recording with both Models                                                  |
+| 9   | **Print:** export the current view as PNG and PDF                                                                                                                                                               | Export a timeline and open it                                                              |
 
 Later, when wanted: replaying `--audio` Runs at real-time speed in the browser, and the Deferred list in `PLAN.md`.
