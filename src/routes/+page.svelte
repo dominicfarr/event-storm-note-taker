@@ -1,13 +1,22 @@
 <script lang="ts">
 	import { startMicrophone } from '#lib/audio/microphone.ts';
+	import { emptyBoard, type Board } from '#lib/board/board.ts';
+	import { BoardView } from '#lib/board-view/board-view.ts';
 	import type { RunUpdate } from '#lib/run/run.ts';
 	import type { Speech } from '#lib/transcriber/transcriber.ts';
+	import { changedStickies, layout } from '#lib/views/layout.ts';
+
+	const highlightFor = 4000; // ms a changed Sticky stays highlighted
 
 	let title = $state('Ordering a takeaway');
 	let sessionId = $state<string | null>(null);
 	let listening = $state(false);
 	let transcript = $state<Speech[]>([]);
 	let problem = $state('');
+	let board = $state.raw<Board>(emptyBoard());
+	let highlight = $state.raw<string[]>([]);
+	let placed = $derived(layout(board, 'chaotic-exploration'));
+	let unhighlight: ReturnType<typeof setTimeout> | undefined;
 	let stopMicrophone: (() => Promise<void>) | null = null;
 	let uploads = Promise.resolve();
 	let lastAt = 0;
@@ -15,6 +24,7 @@
 	async function start() {
 		problem = '';
 		transcript = [];
+		board = emptyBoard();
 		const response = await fetch('/api/sessions', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
@@ -29,6 +39,7 @@
 		updates.onmessage = (event) => {
 			const update: RunUpdate = JSON.parse(event.data);
 			if (update.type === 'speech') transcript = [...transcript, update.speech];
+			else if (update.type === 'board') show(update.board);
 			else if (update.type === 'problem') problem = update.message;
 			else updates.close();
 		};
@@ -44,6 +55,13 @@
 			problem = `The microphone isn't available: ${String(error)}`;
 			updates.close();
 		}
+	}
+
+	function show(next: Board) {
+		highlight = changedStickies(board, next);
+		board = next;
+		clearTimeout(unhighlight);
+		unhighlight = setTimeout(() => (highlight = []), highlightFor);
 	}
 
 	async function stop() {
@@ -77,27 +95,39 @@
 		<button type="submit">{listening ? 'Stop' : 'Start'}</button>
 	</form>
 
-	{#if listening}<p>Listening. Your words appear a few seconds after you say them.</p>{/if}
+	{#if listening}<p>
+			Listening. Your words appear a few seconds after you say them, and Domain Events a few seconds
+			after that.
+		</p>{/if}
 	{#if sessionId && !listening}<p>
 			Session <code>{sessionId}</code> is saved in the Session folder.
 		</p>{/if}
 	{#if problem}<p role="alert">{problem}</p>{/if}
 
-	<ol>
-		{#each transcript as speech, i (i)}
-			<li>
-				<span
-					>{Math.floor(speech.at / 60)}:{String(Math.floor(speech.at % 60)).padStart(2, '0')}</span
-				>
-				{speech.text}
-			</li>
-		{/each}
-	</ol>
+	<div class="session">
+		<section class="board" aria-label="Board">
+			<BoardView {placed} {highlight} />
+		</section>
+
+		<ol aria-label="Transcript">
+			{#each transcript as speech, i (i)}
+				<li>
+					<span
+						>{Math.floor(speech.at / 60)}:{String(Math.floor(speech.at % 60)).padStart(
+							2,
+							'0'
+						)}</span
+					>
+					{speech.text}
+				</li>
+			{/each}
+		</ol>
+	</div>
 </main>
 
 <style>
 	main {
-		max-width: 48rem;
+		max-width: 80rem;
 		margin: 2rem auto;
 		padding: 0 1rem;
 		font-family: system-ui, sans-serif;
@@ -110,6 +140,20 @@
 	label {
 		display: grid;
 		flex: 1;
+	}
+	.session {
+		display: grid;
+		grid-template-columns: 1fr 18rem;
+		gap: 1rem;
+	}
+	.board {
+		height: 70vh;
+		border: 1px solid #ddd;
+	}
+	ol {
+		max-height: 70vh;
+		margin: 0;
+		overflow-y: auto;
 	}
 	li span {
 		color: #666;
