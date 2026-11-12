@@ -54,7 +54,17 @@ The scope is optional but encouraged. The base scopes are:
 | `deps` | Dependency bumps (with `build` or `ci`)     |
 | `adr`  | Architecture decision records (with `docs`) |
 
-Each project adds its glossary terms as scopes, so scopes follow the domain language.
+Each project adds its glossary terms as scopes, so scopes follow the domain language. This project's are:
+
+| Scope       | Covers                                                    |
+| ----------- | --------------------------------------------------------- |
+| `scribe`    | The Scribe: turning the conversation into Sticky changes  |
+| `board`     | The Board and its views                                   |
+| `sticky`    | Stickies and Sticky kinds                                 |
+| `session`   | Sessions, starting and ending them                        |
+| `recording` | Recordings and their Phase timestamps                     |
+| `run`       | Runs, re-running a Recording, and scoring a Run           |
+| `phase`     | Phases and switching between them                         |
 
 The allowed types and scopes, and the 72-character limits, are enforced by commitlint at the `commit-msg` stage (`commitlint.config.mjs`). **Change the commit-lint config and this file together.** Dependabot's commits (`Signed-off-by: dependabot[bot]`) are not linted, because their bodies carry release notes with long lines.
 

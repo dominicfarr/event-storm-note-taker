@@ -26,7 +26,21 @@ export default {
     ],
     // Base scopes. A project adds its glossary terms here and in
     // CONTRIBUTING.md.
-    'scope-enum': [2, 'always', ['deps', 'adr']],
+    'scope-enum': [
+      2,
+      'always',
+      [
+        'deps',
+        'adr',
+        'scribe',
+        'board',
+        'sticky',
+        'session',
+        'recording',
+        'run',
+        'phase',
+      ],
+    ],
     'header-max-length': [2, 'always', 72],
     'body-max-line-length': [2, 'always', 72],
   },
