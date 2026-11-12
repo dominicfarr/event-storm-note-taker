@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sessionFolderName } from './folder-name';
+import { runFolderName, sessionFolderName } from './folder-name';
 
 const startedOn = new Date('2026-11-12T09:30:00Z');
 
@@ -18,5 +18,11 @@ describe('sessionFolderName', () => {
 
 	it('names a Session with no usable title "untitled"', () => {
 		expect(sessionFolderName('?!', startedOn)).toBe('2026-11-12-untitled');
+	});
+});
+
+describe('runFolderName', () => {
+	it('is when the Run started, to the minute, then its Model in hyphenated words', () => {
+		expect(runFolderName(startedOn, 'ollama:qwen3:8b')).toBe('2026-11-12T09-30-ollama-qwen3-8b');
 	});
 });

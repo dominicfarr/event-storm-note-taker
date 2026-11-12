@@ -151,7 +151,7 @@ interface ConversationSource {
 ```
 
 - **Live** receives audio chunks and Phase clicks from the browser, keeps them as the Recording as they arrive, and passes them on.
-- **Recording** replays a Session's Recording. By default it replays the **stored transcript** as `speech` events, so a Run tests only the Scribe and runs as fast as the Model allows. With `--audio` it replays the audio, so the Transcriber is tested too. With `--realtime` it keeps the original timing, for demos.
+- **Recording** replays a Session's Recording. By default it replays the **stored transcript** as `speech` events, so a Run tests only the Scribe and runs as fast as the Model allows. The Run hears replayed speech one line at a time, each once the Scribe has finished the last, so two Runs with the same Model make the same Scribe calls; it neither transcribes nor keeps that speech again. With `--audio` it replays the audio, so the Transcriber is tested too. With `--realtime` it keeps the original timing, for demos. (Slice 3 built the transcript replay; `--audio` and `--realtime` come later.)
 
 ### Run
 
@@ -211,14 +211,14 @@ function score(
 	expected: string[],
 	match: Matcher
 ): {
-	caught: string[];
+	caught: { expected: string; sticky: string; similarity: number }[];
 	missed: string[];
 	junk: string[];
-	orderAgreement: number;
+	orderAgreement: number; // slice 7
 };
 ```
 
-The default matcher is text similarity on normalised Domain Event names. `orderAgreement` compares the caught Domain Events' timeline order with the Expected List's (1 means identical order). A Model-based matcher can be added later behind `Matcher`.
+Each Sticky catches at most one expected Domain Event, and the closest pairs are matched first. An Expected List line may give other acceptable wordings after a `|`. The default matcher is the Dice similarity of letter pairs on normalised Domain Event names, counting only 0.6 and above: Domain Events are named thing first, so two different events about the same thing ("Driver Assigned", "Driver Arrived" at 0.59) share most of their letters, and a false catch would hide where a miss shows. Synonyms such as "Order Submitted" for "Order Placed" go on the Expected List line instead. `orderAgreement` compares the caught Domain Events' timeline order with the Expected List's (1 means identical order). A Model-based matcher can be added later behind `Matcher`.
 
 ## Code layout
 

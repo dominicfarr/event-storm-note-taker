@@ -1,8 +1,8 @@
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createSessionFolder } from './folder';
+import { createSessionFolder, openSessionFolder } from './folder';
 
 const startedAt = new Date('2026-11-12T09:30:00Z');
 let root: string;
@@ -73,5 +73,74 @@ describe('a Run folder', () => {
 		expect(JSON.parse(await readFile(path.join(dir, 'board.json'), 'utf8'))).toEqual(board);
 		const changes = (await readFile(path.join(dir, 'changes.jsonl'), 'utf8')).trim().split('\n');
 		expect(changes.map((line) => JSON.parse(line).id)).toEqual(['s1', 's2']);
+	});
+
+	it('never reuses an earlier Run folder of the same name', async () => {
+		const folder = await createSessionFolder(root, 'Soup', startedAt);
+		const first = await folder.createRunFolder('2026-11-12T09-30-ollama-qwen3-8b');
+		const second = await folder.createRunFolder('2026-11-12T09-30-ollama-qwen3-8b');
+
+		expect(first.name).toBe('2026-11-12T09-30-ollama-qwen3-8b');
+		expect(second.name).toBe('2026-11-12T09-30-ollama-qwen3-8b-2');
+	});
+
+	it("reads an earlier Run's Board and keeps its score", async () => {
+		const folder = await createSessionFolder(root, 'Soup', startedAt);
+		const created = await folder.createRunFolder('run-a');
+		const board = {
+			stickies: [
+				{ id: 's1', kind: 'domain-event' as const, text: 'Kettle Boiled', mentions: 2, saidAt: 0 }
+			]
+		};
+		await created.keepBoard(board);
+
+		const run = await folder.openRunFolder('run-a');
+		await run.keepScore({ caught: 1 });
+
+		expect(await run.board()).toEqual(board);
+		const score = await readFile(path.join(folder.dir, 'runs', 'run-a', 'score.json'), 'utf8');
+		expect(JSON.parse(score)).toEqual({ caught: 1 });
+	});
+
+	it('refuses to open a Run that does not exist', async () => {
+		const folder = await createSessionFolder(root, 'Soup', startedAt);
+
+		await expect(folder.openRunFolder('nope')).rejects.toThrow('There is no Run "nope"');
+	});
+});
+
+describe('openSessionFolder', () => {
+	it('opens an earlier Session and reads its transcript', async () => {
+		const created = await createSessionFolder(root, 'Soup', startedAt);
+		await created.keepSpeech({ at: 0, text: 'The kettle boiled.' });
+		await created.keepSpeech({ at: 5, text: 'The water was poured.' });
+
+		const folder = await openSessionFolder(root, created.id);
+
+		expect(folder.dir).toBe(created.dir);
+		expect(await folder.transcript()).toEqual([
+			{ at: 0, text: 'The kettle boiled.' },
+			{ at: 5, text: 'The water was poured.' }
+		]);
+	});
+
+	it('reads the Expected List, one Domain Event per line, skipping blank lines', async () => {
+		const folder = await createSessionFolder(root, 'Soup', startedAt);
+		await writeFile(path.join(folder.dir, 'expected.txt'), 'Kettle Boiled\n\n  Water Poured  \n');
+
+		expect(await folder.expected()).toEqual(['Kettle Boiled', 'Water Poured']);
+	});
+
+	it('answers an empty transcript and no Expected List when the files are missing', async () => {
+		const folder = await createSessionFolder(root, 'Soup', startedAt);
+
+		expect(await folder.transcript()).toEqual([]);
+		expect(await folder.expected()).toBeUndefined();
+	});
+
+	it('refuses to open a Session that does not exist', async () => {
+		await expect(openSessionFolder(root, 'nope')).rejects.toThrow(
+			`There is no Session "nope" in ${root}`
+		);
 	});
 });
