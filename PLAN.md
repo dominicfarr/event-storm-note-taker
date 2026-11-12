@@ -68,4 +68,4 @@ Not part of "can it work". Each comes back as its own grilling or issue when wan
 1. Repo metadata, drafted for Dom (`ready-for-human`).
 2. Rebase-only merge and branch deletion on merge, drafted for Dom (`ready-for-human`). No branch protection: see ADR 0001.
 3. Add the JS/TS (Svelte) stack (`ready-for-agent`).
-4. Split "can it work" into thin vertical-slice issues, once Dom has reviewed this plan.
+4. The "can it work" slices in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#slices), one issue each, once Dom has reviewed the design.
