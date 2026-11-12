@@ -229,8 +229,8 @@ src/
 
 ## Local services
 
-- `brew install whisper-cpp`, then `whisper-server` with `ggml-small.en.bin` on its default localhost port.
-- `ollama pull qwen3:8b`. Memory: about 1 GB for whisper `small.en` and about 5–6 GB for `qwen3:8b`, which leaves room for the browser on 16 GB.
+- **whisper-server:** `brew install whisper.cpp` and download `ggml-small.en.bin`. The formula has no brew service, so `npm run dev` starts `whisper-server` alongside SvelteKit and stops it on exit, using `WHISPER_MODEL` (the model path) and `WHISPER_PORT` (not the default `8080`) from a gitignored `.env`.
+- **Ollama:** `ollama pull qwen3:8b`; Ollama runs as its own brew service. Memory: about 1 GB for whisper `small.en` and about 5–6 GB for `qwen3:8b`, which leaves room for the browser on 16 GB.
 
 ## Slices
 
