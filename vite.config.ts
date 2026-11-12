@@ -64,6 +64,13 @@ function whisperServer(env: Record<string, string>): Plugin {
 			const stop = () => whisper.kill();
 			server.httpServer?.on('close', stop);
 			process.on('exit', stop);
+			// A second signal (npm exec forwards one) kills Node before 'exit' fires,
+			// so stop on the signal too, then let it do what it would have done.
+			for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const)
+				process.once(signal, () => {
+					stop();
+					if (process.listenerCount(signal) === 0) process.kill(process.pid, signal);
+				});
 		}
 	};
 }
