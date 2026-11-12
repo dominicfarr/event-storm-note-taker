@@ -58,6 +58,7 @@ coverage/
 .eslintcache
 .prettiercache
 .stylelintcache
+vite.config.ts.timestamp-*
 
 # Docker (local overrides; env files are covered under Secrets)
 docker-compose.override.yml
