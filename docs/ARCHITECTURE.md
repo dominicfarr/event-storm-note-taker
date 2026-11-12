@@ -100,7 +100,7 @@ Pivotal Event is a mark on a Domain Event, not its own kind, so that marking and
 
 ```ts
 interface Model {
-	complete<T>(request: { system: string; prompt: string; schema: JSONSchema }): Promise<T>;
+	complete(request: { system: string; prompt: string }): Promise<unknown>; // the JSON it wrote
 }
 
 function createScribe(model: Model): {
@@ -113,7 +113,7 @@ function createScribe(model: Model): {
 };
 ```
 
-The Scribe builds the prompt (the Scope, the current Board with Sticky ids, and the new speech), asks the Model for changes using the **schema for the current Phase**, and drops any change that fails validation instead of failing the Run. Each Phase allows a different set of changes, which keeps the schema small for an 8B model and keeps the Scribe true to the method:
+The Scribe builds the prompt (the Scope, the current Board with Sticky ids, and the new speech), asks the Model for changes **in the shape allowed in the current Phase**, and drops any change that fails validation instead of failing the Run. The shape is described in the prompt and checked by the Scribe, not enforced by the Model (see the Ollama adapter below). Each Phase allows a different set of changes, which keeps the schema small for an 8B model and keeps the Scribe true to the method:
 
 | Phase                | Changes the Scribe may make                                                               |
 | -------------------- | ----------------------------------------------------------------------------------------- |
@@ -123,8 +123,8 @@ The Scribe builds the prompt (the Scope, the current Board with Sticky ids, and 
 
 Model adapters:
 
-- **Ollama** (`qwen3:8b`): `format` set to the schema, thinking turned off for speed, `keep_alive` long so the model stays loaded.
-- **Claude**: used only for comparison Runs; structured output with the same schema. Needs an API key in a local `.env`, never committed.
+- **Ollama** (`qwen3:8b`): `format: 'json'`, thinking turned off for speed, `keep_alive` long so the model stays loaded. Not `format` set to a JSON schema: measured on Dom's M1, schema-constrained decoding took 10 s for a two-line answer and stalled for minutes with the full prompt, where plain JSON takes 1–10 s.
+- **Claude**: used only for comparison Runs; it may add a schema to the request for structured output. Needs an API key in a local `.env`, never committed.
 
 ### Transcriber seam
 
