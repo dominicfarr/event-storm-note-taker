@@ -1,0 +1,15 @@
+# Package Managers
+package-lock.json
+
+# Miscellaneous
+/static/
+
+# Copied from dominicfarr/dev-standards (each starts with a source header).
+# Kept as the standards repo formats them, so they diff cleanly against it.
+.gitignore
+.github/dependabot.yml
+.github/workflows/ci.yml
+.pre-commit-config.yaml
+commitlint.config.mjs
+CONTRIBUTING.md
+docs/DEVELOPMENT.md
