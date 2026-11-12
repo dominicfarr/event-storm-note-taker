@@ -16,6 +16,10 @@ _Avoid_: User, speaker, participant (when meaning the person with the knowledge)
 The kept audio of one Session, with the moments each Phase began.
 _Avoid_: Audio, file, tape
 
+**Expected List**:
+The Domain Events, in domain order, that the Domain Expert would have put on the wall for a Recording; what a Run's Board is scored against.
+_Avoid_: Answer key, golden file, ground truth
+
 **Run**:
 One pass of the Scribe over a Session's conversation, producing one Board. The live Session is its first Run; each later Run re-uses the Recording.
 _Avoid_: Replay, attempt, execution
