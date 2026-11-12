@@ -4,6 +4,7 @@ import { startRun, type Run } from '#lib/run/run.ts';
 import { ollamaModel } from '#lib/scribe/models/ollama.ts';
 import { createScribe } from '#lib/scribe/scribe.ts';
 import { createSessionFolder } from '#lib/session-folder/folder.ts';
+import { runFolderName } from '#lib/session-folder/folder-name.ts';
 import { whisperServerTranscriber } from '#lib/transcriber/whisper-server.ts';
 
 interface LiveSession {
@@ -18,7 +19,7 @@ const model = 'qwen3:8b';
 export async function startSession(title: string): Promise<string> {
 	const startedAt = new Date();
 	const folder = await createSessionFolder(EVENTSTORM_HOME, title, startedAt);
-	const runFolder = await folder.createRunFolder(runName(startedAt, `ollama-${model}`));
+	const runFolder = await folder.createRunFolder(runFolderName(startedAt, `ollama:${model}`));
 	const live = createLiveConversation(folder);
 	const run = startRun({
 		source: live,
@@ -34,7 +35,3 @@ export async function startSession(title: string): Promise<string> {
 export function findSession(id: string): LiveSession | undefined {
 	return sessions.get(id);
 }
-
-/** Such as "2026-11-12T10-04-ollama-qwen3-8b": when the Run started, and its Model. */
-const runName = (startedAt: Date, model: string) =>
-	`${startedAt.toISOString().slice(0, 16).replace(':', '-')}-${model.replaceAll(/[^a-z0-9]+/gi, '-')}`;

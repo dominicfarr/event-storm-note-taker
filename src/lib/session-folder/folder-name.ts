@@ -14,3 +14,12 @@ export function sessionFolderName(title: string, startedOn: Date): string {
 		.filter(Boolean);
 	return words.length > 0 ? `${day}-${words.join('-')}` : `${day}-untitled`;
 }
+
+/**
+ * The name of a Run's folder: when it started, to the minute, then its Model.
+ * For example, "2026-11-12T10-04-ollama-qwen3-8b" for `ollama:qwen3:8b`.
+ */
+export function runFolderName(startedAt: Date, model: string): string {
+	const minute = startedAt.toISOString().slice(0, 16).replace(':', '-');
+	return `${minute}-${model.replaceAll(/[^a-z0-9]+/gi, '-')}`;
+}
