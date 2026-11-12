@@ -6,14 +6,18 @@
 
 You need:
 
+- [Node.js](https://nodejs.org/) 22 or later (`.nvmrc` holds the major version CI uses)
 - [uv](https://docs.astral.sh/uv/)
 - pre-commit: `uv tool install pre-commit==4.7.0` (the version CI uses; bump both together)
 - shellcheck: `brew install shellcheck`, or `uv tool install shellcheck-py`
 
-Then install the hooks for both the `pre-commit` and `commit-msg` stages:
+Then install the npm packages (the hooks run eslint, prettier, svelte-check and vitest from `node_modules`), and the hooks for both the `pre-commit` and `commit-msg` stages:
 
 ```sh
+npm ci
 pre-commit install --install-hooks
 ```
+
+Run the app on localhost with `npm run dev`. `npm test`, `npm run check`, `npm run lint` and `npm run build` run the same checks as CI.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and the commit message format, and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the development practices.
