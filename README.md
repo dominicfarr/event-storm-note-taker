@@ -36,7 +36,7 @@ brew services start ollama
 ollama pull qwen3:8b
 ```
 
-Run the app on localhost with `npm run dev`. It starts `whisper-server` too, with the model in `WHISPER_MODEL`, and stops it on exit. Sessions are kept in `EVENTSTORM_HOME` (`~/EventStorm` by default). Use Chrome: the page asks the browser for 16 kHz microphone audio, which Firefox may refuse. `npm test`, `npm run check`, `npm run lint` and `npm run build` run the same checks as CI.
+Run the app on localhost with `npm run dev`. It starts `whisper-server` too, with the model in `WHISPER_MODEL`, and stops it on exit. Sessions are kept in `EVENTSTORM_HOME` (`~/EventStorm` by default). Session and Run folders are named by their start in UTC, so a Session started in your evening may carry the next day's date. Use Chrome: the page asks the browser for 16 kHz microphone audio, which Firefox may refuse. `npm test`, `npm run check`, `npm run lint` and `npm run build` run the same checks as CI.
 
 ## Re-running and scoring a Session
 
