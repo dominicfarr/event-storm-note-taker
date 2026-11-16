@@ -1,6 +1,5 @@
 // npm run scribe -- <session> [--model ollama:qwen3:8b]
 // Re-runs a Session's Recording through the Scribe, with no browser, into a new Run folder.
-import { parseArgs } from 'node:util';
 import { eventStormHome } from '../env.ts';
 import { createRecordingConversation } from '#lib/conversation/recording.ts';
 import { startRun } from '#lib/run/run.ts';
@@ -9,30 +8,21 @@ import { createScribe } from '#lib/scribe/scribe.ts';
 import { openSessionFolder } from '#lib/session-folder/folder.ts';
 import { runFolderName } from '#lib/session-folder/folder-name.ts';
 import type { Transcriber } from '#lib/transcriber/transcriber.ts';
-
-const { positionals, values } = parseArgs({
-	allowPositionals: true,
-	options: { model: { type: 'string', default: 'ollama:qwen3:8b' } }
-});
-const [session] = positionals;
-if (!session) fail('Usage: npm run scribe -- <session> [--model ollama:qwen3:8b]');
-const [provider, ...rest] = values.model.split(':');
-const modelName = rest.join(':');
-if (provider !== 'ollama' || !modelName)
-	fail(`Only Ollama Models so far, such as ollama:qwen3:8b, not "${values.model}".`);
+import { parseScribeArgs } from './scribe-args.ts';
 
 try {
+	const { session, provider, model } = parseScribeArgs(process.argv.slice(2));
 	const folder = await openSessionFolder(eventStormHome(process.env.EVENTSTORM_HOME), session);
 	const transcript = await folder.transcript();
 	if (transcript.length === 0) fail(`The Session "${session}" has no transcript to re-run.`);
-	const runFolder = await folder.createRunFolder(runFolderName(new Date(), values.model));
+	const runFolder = await folder.createRunFolder(runFolderName(new Date(), `${provider}:${model}`));
 	const noTranscriber: Transcriber = {
 		transcribe: () => Promise.reject(new Error('This Run replays the transcript, not the audio.'))
 	};
 	const run = startRun({
 		source: createRecordingConversation(transcript),
 		transcriber: noTranscriber,
-		scribe: createScribe(ollamaModel(modelName)),
+		scribe: createScribe(ollamaModel(model)),
 		folder,
 		runFolder
 	});
