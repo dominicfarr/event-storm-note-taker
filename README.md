@@ -6,7 +6,7 @@
 
 You need:
 
-- [Node.js](https://nodejs.org/) 22 or later (`.nvmrc` holds the major version CI uses)
+- [Node.js](https://nodejs.org/) 22.17 or later, which SvelteKit needs (`.nvmrc` holds the major version CI uses)
 - [uv](https://docs.astral.sh/uv/)
 - pre-commit: `uv tool install pre-commit==4.7.0` (the version CI uses; bump both together)
 - shellcheck: `brew install shellcheck`, or `uv tool install shellcheck-py`
