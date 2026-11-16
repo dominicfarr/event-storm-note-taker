@@ -56,7 +56,7 @@ Order Paid | Payment Made
 Driver Assigned
 ```
 
-Then score the Run:
+Then score the Run (leave out the Run's name to list the Session's Runs):
 
 ```sh
 npm run score -- 2026-11-12-ordering-a-takeaway 2026-11-12T20-54-ollama-qwen3-8b

@@ -4,12 +4,24 @@ import path from 'node:path';
 import { eventStormHome } from '../env.ts';
 import { score } from '#lib/scoring/score.ts';
 import { openSessionFolder } from '#lib/session-folder/folder.ts';
-
-const [session, runName] = process.argv.slice(2);
-if (!session || !runName) fail('Usage: npm run score -- <session> <run>');
+import { parseScoreArgs, usage } from './score-args.ts';
 
 try {
+	const args = parseScoreArgs(process.argv.slice(2));
+	if (args.help) {
+		console.log(usage);
+		process.exit(0);
+	}
+	const { session, run: runName } = args;
 	const folder = await openSessionFolder(eventStormHome(process.env.EVENTSTORM_HOME), session);
+	if (!runName) {
+		const runs = await folder.runNames();
+		fail(
+			runs.length === 0
+				? `The Session "${session}" has no Runs yet. Make one: npm run scribe -- ${session}`
+				: `Which Run? The Session "${session}" has:\n${runs.map((r) => `  ${r}`).join('\n')}\n\n${usage}`
+		);
+	}
 	const expected = await folder.expected();
 	if (!expected?.length)
 		fail(

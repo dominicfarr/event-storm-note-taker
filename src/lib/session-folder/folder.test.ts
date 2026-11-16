@@ -107,6 +107,20 @@ describe('a Run folder', () => {
 
 		await expect(folder.openRunFolder('nope')).rejects.toThrow('There is no Run "nope"');
 	});
+
+	it('lists the Runs by name, oldest first, ignoring stray files', async () => {
+		const folder = await createSessionFolder(root, 'Soup', startedAt);
+		expect(await folder.runNames()).toEqual([]);
+
+		await folder.createRunFolder('2026-11-12T09-31-ollama-qwen3-8b');
+		await folder.createRunFolder('2026-11-12T09-30-ollama-qwen3-8b');
+		await writeFile(path.join(folder.dir, 'runs', '.DS_Store'), '');
+
+		expect(await folder.runNames()).toEqual([
+			'2026-11-12T09-30-ollama-qwen3-8b',
+			'2026-11-12T09-31-ollama-qwen3-8b'
+		]);
+	});
 });
 
 describe('openSessionFolder', () => {

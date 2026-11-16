@@ -1,4 +1,4 @@
-import { access, appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Board } from '#lib/board/board.ts';
 import type { Speech } from '#lib/transcriber/transcriber.ts';
@@ -23,6 +23,8 @@ export interface SessionFolder {
 	createRunFolder(name: string): Promise<RunFolder>;
 	/** Opens an earlier Run's folder. */
 	openRunFolder(name: string): Promise<RunFolder>;
+	/** The names of the Session's Runs, oldest first; empty if there are none. */
+	runNames(): Promise<string[]>;
 }
 
 /** One Run's folder: its Board, every change asked for, applied or not, and its score. */
@@ -86,6 +88,14 @@ function sessionFolder(id: string, dir: string): SessionFolder {
 			const runDir = path.join(runsDir, name);
 			if (!(await exists(runDir))) throw new Error(`There is no Run "${name}" in ${runsDir}.`);
 			return runFolder(name, runDir);
+		},
+		runNames: async () => {
+			if (!(await exists(runsDir))) return [];
+			const entries = await readdir(runsDir, { withFileTypes: true });
+			return entries
+				.filter((entry) => entry.isDirectory())
+				.map((entry) => entry.name)
+				.sort();
 		}
 	};
 }
