@@ -43,6 +43,15 @@ describe('score', () => {
 		expect(result.missed).toEqual(['Order Delivered']);
 	});
 
+	it('lets each expected Domain Event be caught once, so a duplicate Sticky is junk', () => {
+		const result = score(board('Restaurant Chosen', 'Restaurant Selected'), [
+			'Restaurant Chosen | Restaurant Selected'
+		]);
+
+		expect(result.caught).toHaveLength(1);
+		expect(result.junk).toHaveLength(1);
+	});
+
 	it('lists caught Domain Events in Expected List order', () => {
 		const result = score(board('Order Paid', 'Order Placed'), ['Order Placed', 'Order Paid']);
 
